@@ -13,6 +13,10 @@ setup(
     author='Christopher Bartz',
     author_email='bartz@dkrz.de',
     packages=find_packages(),
+    scripts=[
+        'bin/s3auth-prep', 'bin/s3auth-list', 'bin/s3auth-add-key',
+        'bin/s3auth-delete-key'
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: Apache Software License',

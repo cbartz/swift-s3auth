@@ -1,0 +1,70 @@
+#! /usr/bin/env python
+# coding=utf-8
+# Copyright 2017 Christopher Bartz <bartz@dkrz.de>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Create access key with mapping to specific swift account."""
+
+from argparse import ArgumentParser
+from getpass import getpass
+from sys import argv, exit
+
+from swift.common.bufferedhttp import http_connect_raw as http_connect
+from swift.common.utils import urlparse
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        'key', help='The name of the access key.')
+    parser.add_argument(
+        'account',
+        help='The name of the swift storage account.'
+             'E.g. AUTH_a3586bf8-0f27-448b-8850-556cdq6efzd7')
+    parser.add_argument(
+        '-A', '--admin-url',
+        default='http://127.0.0.1:8080/s3auth/', help='The URL to the auth '
+        'subsystem (default: http://127.0.0.1:8080/s3auth/')
+    parser.add_argument(
+        '-S', '--secret-key',
+        help='Secret key for this access key.')
+    parser.add_argument(
+        '-K', '--admin-key',
+        help='The key for the user with admin rights.')
+
+    args = parser.parse_args(argv[1:])
+
+    for arg in ('secret_key', 'admin_key'):
+        if not getattr(args, arg):
+            setattr(args, arg,
+                    getpass(' '.join(arg.title().split('_')) + ':'))
+
+    parsed = urlparse(args.admin_url)
+    if parsed.scheme not in ('http', 'https'):
+        raise ValueError('Cannot handle protocol scheme %s for url %s' %
+                         (parsed.scheme, repr(args.admin_url)))
+    parsed_path = parsed.path
+    if not parsed_path:
+        parsed_path = '/'
+    elif parsed_path[-1] != '/':
+        parsed_path += '/'
+    path = '{}v1/access_key/{}'.format(parsed_path, args.key)
+    headers = {'x-s3auth-secret-key': args.secret_key,
+               'x-s3auth-account': args.account,
+               'x-s3auth-admin-key': args.admin_key}
+    conn = http_connect(parsed.hostname, parsed.port, 'PUT', path, headers,
+                        ssl=(parsed.scheme == 'https'))
+    resp = conn.getresponse()
+    if resp.status // 100 != 2:
+        exit('Access key creation failed:: {} {}'.format(
+            resp.status, resp.reason))

@@ -31,22 +31,27 @@ Quick Start Guide
 
 4) Restart your proxy server.
 
-6) Initialize the Swift3 backing store in Swift. E.g. with curl:
+6) Initialize the Swift3 backing store in Swift:
 
-       curl -i -H"X-s3auth-prep-key: myprepkey" -H"x-s3auth-hash-key: myhash"\
-       -H"x-s3auth-admin-key: admkey" -XPOST "http://cluster:8080/s3auth/v1/.prep"
+       s3auth-prep -P myprepkey -H myhash -K admkey
+
 
 7) After successful initialization, remove the prep_key from the proxy-server.conf
    for better security.
 
 8) Add an access key. You need to specify the secret key for the access key and
    the swift storage account which the key should map to:
-   
-       curl -i -H"x-s3auth-account: AUTH_acct" -H"x-s3auth-secret-key: skey"\
-       -H"x-s3auth-admin-key: admkey" -XPUT "http://cluster:8080/s3auth/v1/access_key/akey"
+
+       s3auth-add-key -K admkey -S skey akey AUTH_acct   
 
 9) Ensure it works with your favourite s3client. E.g. [s3curl](https://github.com/rtdp/s3curl):
 
        s3curl.pl --key skey --id akey http://cluster:8080/
 
-10) Read the API [docs](http://swift-s3auth.readthedocs.io/en/latest/middleware.html).
+Tools
+------
+You can use the tools  ``s3auth-add-key``, ``s3auth-delete-key`` and ``s3auth-list``
+for managing access keys. If you desire to use the API directly (e.g. with curl),
+then please consult the [docs](http://swift-s3auth.readthedocs.io/en/latest/middleware.html).
+This is especially recommended if your users should be able to change their s3 secret
+keys on their own, as there is no tool for this purpose available.
