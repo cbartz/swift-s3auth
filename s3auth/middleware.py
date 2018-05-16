@@ -336,7 +336,10 @@ class S3Auth(object):
                                        path).get_response(self.app)
 
         if resp.status_int // 100 == 2:
-            return HTTPOk(request=req, body=resp.body)
+            listing = '\n'.join(
+                [e['name'] for e in json.loads(resp.body)]
+            )
+            return HTTPOk(request=req, body=listing)
         else:
             raise Exception(
                 'Could not GET access key listing: {} {}'.format(

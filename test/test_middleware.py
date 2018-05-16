@@ -436,14 +436,14 @@ class TestS3Auth(unittest.TestCase):
     def test_handle_listing_success(self):
         self.test_auth.app = FakeApp(self.req_s3_admin_iter([
             # Get akd container.
-            ('200 Ok', {}, 'listing'),
+            ('200 Ok', {}, '[{"name": "name1"}, {"name": "name2"}]'),
         ]))
         resp = (self.req_s3_admin_make_request('/s3auth/v1/access_key/',
                                                environ={
                                                    'REQUEST_METHOD': 'GET'}).
                 get_response(self.test_auth))
         self.assertEqual(resp.status_int, 200)
-        self.assertEqual(resp.body, 'listing')
+        self.assertEqual(resp.body, 'name1\nname2')
 
     def test_handle_listing_fail_error(self):
         self.test_auth.app = FakeApp(self.req_s3_admin_iter(iter([
